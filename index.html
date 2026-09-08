@@ -308,7 +308,10 @@
         <!-- ABA CARTÕES E SUSPENSÕES -->
         <div id="tab-cartoes" class="tab-content">
             <div class="card">
-                <div class="card-header"><span class="card-title"><i class="fa-solid fa-id-card"></i> Painel de Controle de Cartões e Suspensões</span></div>
+                <div class="card-header">
+                    <span class="card-title"><i class="fa-solid fa-id-card"></i> Painel de Controle de Cartões e Suspensões</span>
+                    <button class="btn btn-danger btn-sm" onclick="clearCardsControl()"><i class="fa-solid fa-trash-can"></i> Zerar Cartões para Novo Campeonato</button>
+                </div>
                 <p style="margin-bottom: 15px; color: var(--text-muted);">
                     <strong>Regras Automáticas:</strong> <br>
                     🟨 <strong>2º Cartão Amarelo Acumulado:</strong> Suspensão automática por <strong>1 partida</strong>. <br>
@@ -931,6 +934,14 @@
             if(cardsControl[athId] && cardsControl[athId].matchesSuspended > 0) {
                 cardsControl[athId].matchesSuspended -= 1;
                 saveAndRefresh();
+            }
+        }
+
+        function clearCardsControl() {
+            if(confirm("Tem certeza que deseja zerar o controle de cartões e suspensões?\nIsso apagará o histórico de cartões de todos os atletas para o novo campeonato.")) {
+                cardsControl = {};
+                saveAndRefresh();
+                alert("Módulo de cartões zerado com sucesso!");
             }
         }
 
