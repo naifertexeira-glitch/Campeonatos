@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -16,7 +17,6 @@
             --text-main: #064e3b;
             --text-muted: #475569;
             --border: #d1fae5;
-            --accent-green: #10b981;
             --accent-amber: #f59e0b;
             --accent-rose: #f43f5e;
             --shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
@@ -70,6 +70,15 @@
         .sub-tab { padding: 8px 18px; border-radius: 30px; border: none; background: #e2e8f0; color: var(--text-muted); font-weight: 700; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .sub-tab.active { background: var(--primary); color: white; }
         .year-badge { background: #f59e0b; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; }
+        .phase-tag { background: #d1fae5; color: #064e3b; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; }
+        .standby-box { background: #fef3c7; border: 1px dashed #f59e0b; padding: 10px; border-radius: var(--radius-md); font-size: 0.85rem; font-weight: 700; color: #92400e; margin-bottom: 15px; }
+        .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 800; }
+        .status-ongoing { background: #fee2e2; color: #991b1b; }
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .badge-yellow { background: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .badge-red { background: #fecdd3; color: #9f1239; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .badge-suspended { background: #334155; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .import-box { background: #ffffff; border: 1px dashed var(--primary); border-radius: var(--radius-md); padding: 12px; margin-bottom: 15px; }
         @media print {
             header, nav, .btn, .no-print, .config-drawer { display: none !important; }
             body { background: white; color: black; }
@@ -91,7 +100,7 @@
             </div>
             <div class="header-actions">
                 <div style="display: flex; align-items: center; gap: 8px;" class="no-print">
-                    <label style="font-size: 0.8rem; font-weight: 700; color: white;">EDITIONS / ANOS:</label>
+                    <label style="font-size: 0.8rem; font-weight: 700; color: white;">TEMPORADA:</label>
                     <select id="year-selector" class="form-control" style="padding: 6px 12px; width: auto;" onchange="changeYear(this.value)"></select>
                 </div>
                 <button class="btn btn-light" onclick="toggleConfigDrawer()"><i class="fa-solid fa-pen-to-square"></i> Personalizar</button>
@@ -140,7 +149,7 @@
         <div class="nav-container">
             <button class="nav-tab active" onclick="switchTab('equipes', this)"><i class="fa-solid fa-users"></i> Equipes</button>
             <button class="nav-tab" onclick="switchTab('modalidades', this)"><i class="fa-solid fa-volleyball"></i> Coletivos</button>
-            <button class="nav-tab" onclick="switchTab('individuais', this)"><i class="fa-solid fa-chess"></i> Xadrez / Tênis de Mesa (Geral)</button>
+            <button class="nav-tab" onclick="switchTab('avancado', this)"><i class="fa-solid fa-clipboard-user"></i> Súmula, Cartões e Artilharia</button>
             <button class="nav-tab" onclick="switchTab('arrecadacao', this)"><i class="fa-solid fa-hand-holding-heart"></i> Arrecadação</button>
             <button class="nav-tab" onclick="switchTab('cultural', this)"><i class="fa-solid fa-masks-theater"></i> Culturais</button>
             <button class="nav-tab" onclick="switchTab('geral', this)"><i class="fa-solid fa-chart-line"></i> Classificação Geral</button>
@@ -232,13 +241,13 @@
                         <select id="mod-format-select" class="form-control">
                             <option value="todos_contra_todos">Todos contra Todos</option>
                             <option value="ida_volta">Ida e Volta</option>
-                            <option value="eliminatoria_simples">Eliminatória Simples (Com 3º/4º e Final)</option>
-                            <option value="eliminatoria_dupla">Eliminatória Dupla (Chave Winner + Loser)</option>
+                            <option value="eliminatoria_simples">Eliminatória Simples (Até a Final)</option>
+                            <option value="eliminatoria_dupla">Eliminatória Dupla (Até a Final)</option>
                         </select>
                     </div>
                 </div>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-primary" onclick="generateMatches()"><i class="fa-solid fa-shuffle"></i> Gerar Tabela / Chaveamento</button>
+                    <button class="btn btn-primary" onclick="generateMatches()"><i class="fa-solid fa-shuffle"></i> Gerar Chaveamento Automático</button>
                     <button class="btn btn-warning" onclick="resetCurrentMatches()"><i class="fa-solid fa-rotate-left"></i> Zerar Modalidade</button>
                 </div>
             </div>
@@ -249,11 +258,14 @@
                     <div id="matches-container"><p style="color:var(--text-muted);">Selecione os parâmetros e clique em Gerar.</p></div>
                 </div>
                 <div class="card">
-                    <div class="card-header"><span class="card-title"><i class="fa-solid fa-ranking-star"></i> Classificação da Modalidade</span></div>
+                    <div class="card-header">
+                        <span class="card-title"><i class="fa-solid fa-ranking-star"></i> Posição da Modalidade</span>
+                        <div id="modality-status-container"></div>
+                    </div>
                     <div class="table-responsive">
                         <table>
                             <thead>
-                                <tr><th>Pos</th><th>Equipe</th><th>Pts Geral</th></tr>
+                                <tr><th>Pos</th><th>Equipe</th><th>Pontos p/ Geral</th></tr>
                             </thead>
                             <tbody id="modality-standings-body">
                                 <tr><td colspan="3" style="text-align:center;">Nenhuma partida processada.</td></tr>
@@ -264,55 +276,135 @@
             </div>
         </div>
 
-        <!-- ABA MODALIDADES INDIVIDUAIS -->
-        <div id="tab-individuais" class="tab-content">
-            <div class="card">
-                <div class="card-header"><span class="card-title"><i class="fa-solid fa-chess-king"></i> Xadrez e Tênis de Mesa (Torneio Geral Unificado)</span></div>
-                <p style="margin-bottom:15px; color:var(--text-muted); font-size:0.9rem;">
-                    <strong>Regra de Pontuação Geral:</strong> 🥇 1º Lugar = 50 pts | 🥈 2º Lugar = 40 pts | 🥉 3º e 4º Lugares (Semifinalistas) = 30 pts cada.
-                </p>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Modalidade</label>
-                        <select id="ind-mod-select" class="form-control" onchange="renderIndAthletes(); renderIndBracket();">
-                            <option value="Xadrez">Xadrez</option>
-                            <option value="Tênis de Mesa">Tênis de Mesa</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Equipe / Turma do Atleta</label>
-                        <select id="ind-team-select" class="form-control"></select>
+        <!-- ABA AVANÇADA: SÚMULA, CARTÕES E ARTILHARIA -->
+        <div id="tab-avancado" class="tab-content">
+            <div class="sub-nav no-print">
+                <button class="sub-tab active" onclick="switchAvancadoSubTab('sumula', this)"><i class="fa-solid fa-file-pen"></i> Súmula do Jogo</button>
+                <button class="sub-tab" onclick="switchAvancadoSubTab('cartoes', this)"><i class="fa-solid fa-id-card"></i> Cartões e Suspensões</button>
+                <button class="sub-tab" onclick="switchAvancadoSubTab('artilharia', this)"><i class="fa-solid fa-futbol"></i> Artilharia</button>
+            </div>
+
+            <!-- SUB-ABA SÚMULA -->
+            <div id="subtab-sumula" class="avancado-subcontent">
+                <div class="card">
+                    <div class="card-header"><span class="card-title"><i class="fa-solid fa-list-check"></i> Seleção do Jogo para Preenchimento de Súmula</span></div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Jogo Ativo</label>
+                            <select id="sumula-match-select" class="form-control" onchange="loadSumulaMatch()"></select>
+                        </div>
                     </div>
                 </div>
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label>Adicionar Atletas de uma só vez (Cole um atleta por linha):</label>
-                    <textarea id="ind-names-bulk" class="form-control" rows="3" placeholder="Exemplo:&#10;Lucas Silva&#10;Gabriel Souza&#10;Mateus Pereira"></textarea>
-                </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="btn btn-primary" onclick="addBulkAthletes()"><i class="fa-solid fa-users-medical"></i> Adicionar Atletas</button>
-                    <button class="btn btn-warning" onclick="generateIndBracket()"><i class="fa-solid fa-shuffle"></i> Sortear Grupos e Gerar Chave</button>
-                    <button class="btn btn-danger" onclick="resetIndData()"><i class="fa-solid fa-trash"></i> Limpar Atletas/Chaves</button>
+
+                <div id="sumula-details-card" class="card" style="display:none;">
+                    <div class="card-header">
+                        <span class="card-title" id="sumula-match-title">Súmula da Partida</span>
+                        <button class="btn btn-primary" onclick="saveSumula()"><i class="fa-solid fa-floppy-disk"></i> Salvar Registros da Súmula</button>
+                    </div>
+
+                    <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+                        <!-- Time A -->
+                        <div style="background: #f8fafc; padding: 15px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+                            <h3 id="sumula-teamA-name" style="margin-bottom: 10px; color: var(--primary);">Time A</h3>
+                            
+                            <!-- Área de adição individual e em lote -->
+                            <div class="import-box no-print">
+                                <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">
+                                    <i class="fa-solid fa-users-rectangle"></i> ADICIONAR ATLETAS DA EQUIPE A
+                                </label>
+                                <textarea id="batch-players-A" class="form-control" style="height:60px; font-size:0.85rem; margin-bottom:8px;" placeholder="Digite 1 nome ou vários atletas separados por vírgula ou em linhas (Ex: Carlos, João, Pedro)"></textarea>
+                                <div style="display:flex; gap:6px;">
+                                    <button class="btn btn-primary" style="padding:6px 12px; font-size:0.8rem;" onclick="importBatchPlayers('A')"><i class="fa-solid fa-plus"></i> Adicionar Atleta(s)</button>
+                                    <button class="btn btn-light" style="padding:6px 12px; font-size:0.8rem; color:black;" onclick="addPlayerToSumula('A')"><i class="fa-solid fa-font"></i> Linha Em Branco</button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr><th>Nº</th><th>Atleta</th><th>Gols</th><th>Cartão</th><th>Ação</th></tr>
+                                    </thead>
+                                    <tbody id="sumula-teamA-players"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Time B -->
+                        <div style="background: #f8fafc; padding: 15px; border-radius: var(--radius-md); border: 1px solid var(--border);">
+                            <h3 id="sumula-teamB-name" style="margin-bottom: 10px; color: var(--primary);">Time B</h3>
+                            
+                            <!-- Área de adição individual e em lote -->
+                            <div class="import-box no-print">
+                                <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">
+                                    <i class="fa-solid fa-users-rectangle"></i> ADICIONAR ATLETAS DA EQUIPE B
+                                </label>
+                                <textarea id="batch-players-B" class="form-control" style="height:60px; font-size:0.85rem; margin-bottom:8px;" placeholder="Digite 1 nome ou vários atletas separados por vírgula ou em linhas (Ex: Lucas, Mateus, Gabriel)"></textarea>
+                                <div style="display:flex; gap:6px;">
+                                    <button class="btn btn-primary" style="padding:6px 12px; font-size:0.8rem;" onclick="importBatchPlayers('B')"><i class="fa-solid fa-plus"></i> Adicionar Atleta(s)</button>
+                                    <button class="btn btn-light" style="padding:6px 12px; font-size:0.8rem; color:black;" onclick="addPlayerToSumula('B')"><i class="fa-solid fa-font"></i> Linha Em Branco</button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr><th>Nº</th><th>Atleta</th><th>Gols</th><th>Cartão</th><th>Ação</th></tr>
+                                    </thead>
+                                    <tbody id="sumula-teamB-players"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+            <!-- SUB-ABA CARTÕES E SUSPENSÕES -->
+            <div id="subtab-cartoes" class="avancado-subcontent" style="display:none;">
                 <div class="card">
-                    <div class="card-header"><span class="card-title"><i class="fa-solid fa-address-card"></i> Atletas Cadastrados</span></div>
+                    <div class="card-header"><span class="card-title"><i class="fa-solid fa-triangle-exclamation"></i> Relatório de Atletas Punidos e Suspensos</span></div>
+                    <p style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem;">
+                        <strong>Regra de Suspensão:</strong> 2 Cartões Amarelos ou 1 Cartão Vermelho geram automaticamente <strong>1 Jogo de Suspensão</strong>.
+                    </p>
                     <div class="table-responsive">
                         <table>
                             <thead>
-                                <tr><th>Atleta</th><th>Equipe / Turma</th><th>Segmento</th></tr>
+                                <tr>
+                                    <th>Atleta</th>
+                                    <th>Equipe</th>
+                                    <th>Segmento</th>
+                                    <th>Amarelos</th>
+                                    <th>Vermelhos</th>
+                                    <th>Status de Suspensão</th>
+                                </tr>
                             </thead>
-                            <tbody id="ind-athletes-table">
-                                <tr><td colspan="3">Nenhum atleta cadastrado.</td></tr>
+                            <tbody id="cartoes-table-body">
+                                <tr><td colspan="6" style="text-align: center;">Nenhuma infração registrada nas súmulas.</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
+            </div>
+
+            <!-- SUB-ABA ARTILHARIA -->
+            <div id="subtab-artilharia" class="avancado-subcontent" style="display:none;">
                 <div class="card">
-                    <div class="card-header"><span class="card-title"><i class="fa-solid fa-diagram-next"></i> Chaveamento / Torneio</span></div>
-                    <div id="ind-bracket-container">
-                        <p style="color:var(--text-muted);">Adicione atletas e clique em 'Sortear Grupos e Gerar Chave'.</p>
+                    <div class="card-header"><span class="card-title"><i class="fa-solid fa-fire"></i> Ranking Geral de Artilharia</span></div>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Posição</th>
+                                    <th>Atleta</th>
+                                    <th>Nº Camisa</th>
+                                    <th>Equipe</th>
+                                    <th>Segmento</th>
+                                    <th>Gols Marcados</th>
+                                </tr>
+                            </thead>
+                            <tbody id="artilharia-table-body">
+                                <tr><td colspan="6" style="text-align: center;">Nenhum gol registrado nas súmulas.</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -358,7 +450,7 @@
             </div>
 
             <div class="card">
-                <div class="card-header"><span class="card-title" id="geral-title"><i class="fa-solid fa-trophy"></i> Classificação por Segmento — Fundamental 02</span></div>
+                <div class="card-header"><span class="card-title" id="geral-title"><i class="fa-solid fa-trophy"></i> Classificação Geral</span></div>
                 <div class="table-responsive">
                     <table>
                         <thead>
@@ -366,8 +458,7 @@
                                 <th>Posição</th>
                                 <th>Equipe</th>
                                 <th>Segmento</th>
-                                <th>Coletivos</th>
-                                <th>Individuais</th>
+                                <th>Coletivos (Pontos por Posição)</th>
                                 <th>Arrecadação</th>
                                 <th>Cultural</th>
                                 <th>TOTAL GERAL</th>
@@ -390,7 +481,7 @@
                 <div class="table-responsive">
                     <table>
                         <thead>
-                            <tr><th>Pos</th><th>Equipe</th><th>Segmento</th><th>Coletivos</th><th>Individuais</th><th>Arrecadação</th><th>Cultural</th><th>TOTAL</th></tr>
+                            <tr><th>Pos</th><th>Equipe</th><th>Segmento</th><th>Coletivos</th><th>Arrecadação</th><th>Cultural</th><th>TOTAL</th></tr>
                         </thead>
                         <tbody id="boletim-table-body"></tbody>
                     </table>
@@ -404,15 +495,12 @@
     </footer>
 
     <script>
-        // GERENCIAMENTO DE MULTI-TEMPORADAS / ANOS
         let currentYear = localStorage.getItem('current_edition_year') || '2026';
         let availableYears = JSON.parse(localStorage.getItem('available_years')) || [currentYear];
 
-        // ESTADO GLOBAL DA APLICAÇÃO VINCULADO AO ANO
         let teams = [];
         let matches = [];
-        let indAthletes = [];
-        let indMatches = [];
+        let sumulas = {}; 
         let headerConfig = JSON.parse(localStorage.getItem('header_config')) || {
             title: 'CAMPEONATO INTERCLASSE',
             subtitle: 'Escola Verde — Gestão Esportiva e Cultural',
@@ -425,8 +513,7 @@
             localStorage.setItem('current_edition_year', year);
             teams = JSON.parse(localStorage.getItem(`teams_data_${year}`)) || [];
             matches = JSON.parse(localStorage.getItem(`matches_data_${year}`)) || [];
-            indAthletes = JSON.parse(localStorage.getItem(`ind_athletes_data_${year}`)) || [];
-            indMatches = JSON.parse(localStorage.getItem(`ind_matches_data_${year}`)) || [];
+            sumulas = JSON.parse(localStorage.getItem(`sumulas_data_${year}`)) || {};
             
             document.getElementById('current-year-badge').innerText = year;
             renderYearSelector();
@@ -450,7 +537,7 @@
         function createNewYearEdition() {
             const yearInput = document.getElementById('new-year-input').value.trim();
             if(!yearInput || yearInput.length < 4) {
-                alert('Por favor, informe um ano válido (Ex: 2027).');
+                alert('Informe um ano válido (Ex: 2027).');
                 return;
             }
 
@@ -463,19 +550,16 @@
             document.getElementById('new-year-input').value = '';
             toggleConfigDrawer();
             loadYearData(yearInput);
-            alert(`Nova edição (${yearInput}) iniciada com sucesso! Você pode alternar para anos anteriores no menu do topo.`);
+            alert(`Nova edição (${yearInput}) iniciada com sucesso!`);
         }
 
-        // ATUALIZAR NOME COMPLETO DA MODALIDADE COM CATEGORIA
         function updateModalityFullSelect() {
             const sport = document.getElementById('mod-sport-select').value;
             const category = document.getElementById('mod-category-select').value;
-            const fullMod = `${sport} ${category}`;
-            document.getElementById('mod-select').value = fullMod;
+            document.getElementById('mod-select').value = `${sport} ${category}`;
             renderMatches();
         }
 
-        // NAVEGAÇÃO DE ABAS
         function switchTab(tabId, element) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
@@ -483,15 +567,24 @@
             if(element) element.classList.add('active');
 
             if(tabId === 'equipes') renderTeams();
-            if(tabId === 'modalidades') { updateModalityFullSelect(); renderMatches(); }
-            if(tabId === 'individuais') { updateIndTeamDropdown(); renderIndAthletes(); renderIndBracket(); }
+            if(tabId === 'modalidades') { updateModalityFullSelect(); }
+            if(tabId === 'avancado') { populateMatchSelectorForSumula(); loadSumulaMatch(); }
             if(tabId === 'arrecadacao') renderArrecadacao();
             if(tabId === 'cultural') renderCultural();
             if(tabId === 'geral') renderGeral();
             if(tabId === 'boletim') renderBoletim();
         }
 
-        // CONFIGURAÇÃO DO CABEÇALHO / LOGO
+        function switchAvancadoSubTab(subTabId, element) {
+            document.querySelectorAll('.avancado-subcontent').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('#tab-avancado .sub-tab').forEach(b => b.classList.remove('active'));
+            document.getElementById(`subtab-${subTabId}`).style.display = 'block';
+            if(element) element.classList.add('active');
+
+            if(subTabId === 'cartoes') renderCartoes();
+            if(subTabId === 'artilharia') renderArtilharia();
+        }
+
         function toggleConfigDrawer() {
             const drawer = document.getElementById('config-drawer');
             drawer.classList.toggle('open');
@@ -506,10 +599,9 @@
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const logoData = e.target.result;
-                    headerConfig.logo = logoData;
+                    headerConfig.logo = e.target.result;
                     saveHeaderData();
-                    displayLogo(logoData);
+                    displayLogo(headerConfig.logo);
                 };
                 reader.readAsDataURL(file);
             }
@@ -552,7 +644,7 @@
             document.getElementById('boletim-subtitle-text').innerText = headerConfig.subtitle;
         }
 
-        // GERENCIAMENTO DE EQUIPES
+        // EQUIPES
         function saveTeam(e) {
             e.preventDefault();
             const id = document.getElementById('team-id').value;
@@ -576,7 +668,6 @@
             }
             saveAndRefresh();
             resetTeamForm();
-            updateIndTeamDropdown();
         }
 
         function renderTeams() {
@@ -617,15 +708,954 @@
             if(confirm('Deseja excluir a equipe?')) {
                 teams = teams.filter(t => t.id != id);
                 saveAndRefresh();
-                updateIndTeamDropdown();
             }
+        }
+
+        // GERADOR DINÂMICO DE CHAVES E PARTIDAS
+        function getPhaseName(remaining) {
+            if (remaining === 2) return "Grande Final";
+            if (remaining === 4) return "Semifinais";
+            if (remaining === 8) return "Quartas de Final";
+            if (remaining === 16) return "Oitavas de Final";
+            return `Rodada de ${remaining}`;
+        }
+
+        function generateMatches() {
+            const mod = document.getElementById('mod-select').value;
+            const segment = document.getElementById('mod-segment-select').value;
+            const format = document.getElementById('mod-format-select').value;
+            let filteredTeams = teams.filter(t => t.segment === segment);
+
+            if(filteredTeams.length < 2) {
+                alert('É necessário ter ao menos 2 equipes cadastradas neste segmento.');
+                return;
+            }
+
+            matches = matches.filter(m => !(m.modality === mod && m.segment === segment));
+            let matchId = Date.now();
+            let teamNames = filteredTeams.map(t => t.name).sort(() => Math.random() - 0.5);
+
+            if (format === 'todos_contra_todos' || format === 'ida_volta') {
+                for(let i=0; i<teamNames.length; i++) {
+                    for(let j=i+1; j<teamNames.length; j++) {
+                        matches.push({
+                            id: matchId++, modality: mod, segment, format, phase: 'Fase Única',
+                            teamA: teamNames[i], teamB: teamNames[j], scoreA: '', scoreB: ''
+                        });
+                        if(format === 'ida_volta') {
+                            matches.push({
+                                id: matchId++, modality: mod, segment, format, phase: 'Fase Única (Volta)',
+                                teamA: teamNames[j], teamB: teamNames[i], scoreA: '', scoreB: ''
+                            });
+                        }
+                    }
+                }
+            } 
+            else if (format === 'eliminatoria_simples') {
+                let N = teamNames.length;
+                let powerOf2 = 1;
+                while (powerOf2 < N) powerOf2 *= 2;
+                let numByes = powerOf2 - N;
+
+                let brackets = [];
+                let idx = 0;
+                for (let i = 0; i < numByes; i++) {
+                    brackets.push({ teamA: teamNames[idx++], teamB: 'BYE' });
+                }
+                while (idx < N) {
+                    brackets.push({ teamA: teamNames[idx], teamB: teamNames[idx+1] });
+                    idx += 2;
+                }
+
+                let curTeamsCount = powerOf2;
+                let roundIndex = 1;
+
+                while (curTeamsCount >= 2) {
+                    let phaseTitle = getPhaseName(curTeamsCount);
+                    let numMatchesInRound = curTeamsCount / 2;
+
+                    for (let m = 0; m < numMatchesInRound; m++) {
+                        let matchKey = `R${roundIndex}_M${m+1}`;
+                        let tA = "A Definir";
+                        let tB = "A Definir";
+
+                        if (roundIndex === 1) {
+                            tA = brackets[m].teamA;
+                            tB = brackets[m].teamB;
+                        }
+
+                        let matchObj = {
+                            id: matchId++, modality: mod, segment, format,
+                            phase: phaseTitle, key: matchKey,
+                            teamA: tA, teamB: tB,
+                            scoreA: '', scoreB: ''
+                        };
+
+                        if (tB === 'BYE') {
+                            matchObj.scoreA = '1';
+                            matchObj.scoreB = '0';
+                        }
+
+                        matches.push(matchObj);
+                    }
+
+                    if (curTeamsCount === 4) {
+                        matches.push({
+                            id: matchId++, modality: mod, segment, format,
+                            phase: 'Disputa de 3º/4º Lugar', key: 'terceiro_lugar',
+                            teamA: 'Perdedor Semi 1', teamB: 'Perdedor Semi 2',
+                            scoreA: '', scoreB: ''
+                        });
+                    }
+
+                    curTeamsCount /= 2;
+                    roundIndex++;
+                }
+            }
+            else if (format === 'eliminatoria_dupla') {
+                let N = teamNames.length;
+                let powerOf2 = 1;
+                while (powerOf2 < N) powerOf2 *= 2;
+                let numByes = powerOf2 - N;
+
+                let brackets = [];
+                let idx = 0;
+                for (let i = 0; i < numByes; i++) {
+                    brackets.push({ teamA: teamNames[idx++], teamB: 'BYE' });
+                }
+                while (idx < N) {
+                    brackets.push({ teamA: teamNames[idx], teamB: teamNames[idx+1] });
+                    idx += 2;
+                }
+
+                let curTeamsCount = powerOf2;
+                let roundIndex = 1;
+
+                while (curTeamsCount >= 2) {
+                    let phaseTitle = "Chave Superior - " + getPhaseName(curTeamsCount);
+                    let numMatches = curTeamsCount / 2;
+
+                    for (let m = 0; m < numMatches; m++) {
+                        let key = `W_R${roundIndex}_M${m+1}`;
+                        let tA = roundIndex === 1 ? brackets[m].teamA : "A Definir";
+                        let tB = roundIndex === 1 ? brackets[m].teamB : "A Definir";
+
+                        let matchObj = {
+                            id: matchId++, modality: mod, segment, format,
+                            phase: phaseTitle, key: key,
+                            teamA: tA, teamB: tB,
+                            scoreA: '', scoreB: ''
+                        };
+
+                        if (tB === 'BYE') {
+                            matchObj.scoreA = '1';
+                            matchObj.scoreB = '0';
+                        }
+
+                        matches.push(matchObj);
+                    }
+
+                    curTeamsCount /= 2;
+                    roundIndex++;
+                }
+
+                let totalRoundsWinners = roundIndex - 1;
+                for (let r = 1; r < totalRoundsWinners; r++) {
+                    let numMatchesInRep = Math.max(1, Math.floor(powerOf2 / Math.pow(2, r + 1)));
+                    for (let m = 0; m < numMatchesInRep; m++) {
+                        matches.push({
+                            id: matchId++, modality: mod, segment, format,
+                            phase: `Chave Repescagem - Fase ${r}`, key: `L_R${r}_M${m+1}`,
+                            teamA: "A Definir", teamB: "A Definir", scoreA: '', scoreB: ''
+                        });
+                    }
+                }
+
+                matches.push({
+                    id: matchId++, modality: mod, segment, format,
+                    phase: "Chave Repescagem - Final", key: "L_FINAL",
+                    teamA: "A Definir", teamB: "A Definir", scoreA: '', scoreB: ''
+                });
+
+                matches.push({
+                    id: matchId++, modality: mod, segment, format,
+                    phase: "Grande Final", key: "GRAND_FINAL",
+                    teamA: "Vencedor Chave Superior", teamB: "Vencedor Repescagem", scoreA: '', scoreB: ''
+                });
+
+                matches.push({
+                    id: matchId++, modality: mod, segment, format,
+                    phase: "Revanche Final (Se Necessário)", key: "REVANCHE",
+                    teamA: "A Definir", teamB: "A Definir", scoreA: '', scoreB: ''
+                });
+            }
+
+            processPhaseAdvancement(mod, segment);
+            saveAndRefresh();
+            renderMatches();
+        }
+
+        function renderMatches() {
+            const mod = document.getElementById('mod-select').value;
+            const segment = document.getElementById('mod-segment-select').value;
+            const container = document.getElementById('matches-container');
+            const currentMatches = matches.filter(m => m.modality === mod && m.segment === segment);
+
+            if(!container) return;
+
+            if(currentMatches.length === 0) {
+                container.innerHTML = '<p style="color:var(--text-muted);">Nenhum jogo gerado para estes parâmetros.</p>';
+                renderModalityStandings([], false);
+                return;
+            }
+
+            container.innerHTML = '';
+            
+            let hasBye = currentMatches.some(m => m.teamB === 'BYE');
+            if(hasBye) {
+                container.innerHTML += `<div class="standby-box"><i class="fa-solid fa-circle-info"></i> Chaveamento ajustado com Stand-by (BYE) na 1ª rodada. Equipes qualificadas avançam direto.</div>`;
+            }
+
+            currentMatches.forEach((m, idx) => {
+                let isBye = m.teamB === 'BYE';
+                container.innerHTML += `
+                    <div class="match-box">
+                        <div class="match-header">
+                            <span>Jogo ${idx+1}</span>
+                            <span class="phase-tag">${m.phase || 'Partida'}</span>
+                        </div>
+                        <div class="match-row">
+                            <span style="flex:1;"><strong>${m.teamA}</strong></span>
+                            <input type="number" class="score-input" value="${m.scoreA}" ${isBye ? 'disabled' : ''} onchange="updateScore(${m.id}, 'A', this.value)">
+                            <span>x</span>
+                            <input type="number" class="score-input" value="${m.scoreB}" ${isBye ? 'disabled' : ''} onchange="updateScore(${m.id}, 'B', this.value)">
+                            <span style="flex:1; text-align:right;"><strong>${m.teamB}</strong></span>
+                        </div>
+                    </div>`;
+            });
+
+            calculateModalityStandings(mod, segment);
+        }
+
+        function updateScore(id, teamVal, val) {
+            const m = matches.find(item => item.id === id);
+            if(m) {
+                if(teamVal === 'A') m.scoreA = val;
+                if(teamVal === 'B') m.scoreB = val;
+
+                processPhaseAdvancement(m.modality, m.segment);
+
+                saveAndRefresh();
+                renderMatches();
+            }
+        }
+
+        function processPhaseAdvancement(mod, segment) {
+            const currentMatches = matches.filter(m => m.modality === mod && m.segment === segment);
+            if(currentMatches.length === 0) return;
+
+            const format = currentMatches[0].format;
+
+            if (format === 'eliminatoria_simples') {
+                let rounds = {};
+                currentMatches.forEach(m => {
+                    if (m.key && m.key.startsWith('R')) {
+                        let r = parseInt(m.key.split('_')[0].replace('R', ''));
+                        if (!rounds[r]) rounds[r] = [];
+                        rounds[r].push(m);
+                    }
+                });
+
+                let roundNumbers = Object.keys(rounds).map(Number).sort((a,b) => a - b);
+
+                for (let i = 0; i < roundNumbers.length - 1; i++) {
+                    let rCurr = roundNumbers[i];
+                    let rNext = roundNumbers[i+1];
+                    let currMatches = rounds[rCurr];
+                    let nextMatches = rounds[rNext];
+
+                    for (let mIdx = 0; mIdx < currMatches.length; mIdx++) {
+                        let m = currMatches[mIdx];
+                        let winner = null;
+                        let loser = null;
+
+                        if (m.scoreA !== '' && m.scoreB !== '' && m.scoreA !== null && m.scoreB !== null) {
+                            let sA = parseInt(m.scoreA);
+                            let sB = parseInt(m.scoreB);
+                            if (sA > sB) { winner = m.teamA; loser = m.teamB; }
+                            else if (sB > sA) { winner = m.teamB; loser = m.teamA; }
+                        }
+
+                        let targetMatchIdx = Math.floor(mIdx / 2);
+                        let isTeamA = (mIdx % 2 === 0);
+
+                        if (nextMatches[targetMatchIdx]) {
+                            if (isTeamA) nextMatches[targetMatchIdx].teamA = winner || "A Definir";
+                            else nextMatches[targetMatchIdx].teamB = winner || "A Definir";
+                        }
+
+                        if (currMatches.length === 2) {
+                            let terceiroMatch = currentMatches.find(item => item.key === 'terceiro_lugar');
+                            if (terceiroMatch) {
+                                if (isTeamA) terceiroMatch.teamA = loser || "A Definir";
+                                else terceiroMatch.teamB = loser || "A Definir";
+                            }
+                        }
+                    }
+                }
+            }
+            else if (format === 'eliminatoria_dupla') {
+                let winnersMatches = currentMatches.filter(m => m.key && m.key.startsWith('W_'));
+                winnersMatches.forEach(m => {
+                    if (m.scoreA !== '' && m.scoreB !== '') {
+                        let sA = parseInt(m.scoreA); let sB = parseInt(m.scoreB);
+                        let win = sA > sB ? m.teamA : m.teamB;
+                        let lose = sA > sB ? m.teamB : m.teamA;
+
+                        let parts = m.key.split('_');
+                        let r = parseInt(parts[1].replace('R', ''));
+                        let mNum = parseInt(parts[2].replace('M', ''));
+
+                        let nextW = currentMatches.find(item => item.key === `W_R${r+1}_M${Math.ceil(mNum/2)}`);
+                        if (nextW) {
+                            if (mNum % 2 !== 0) nextW.teamA = win;
+                            else nextW.teamB = win;
+                        }
+
+                        let nextL = currentMatches.find(item => item.key === `L_R${r}_M${mNum}`);
+                        if (nextL) nextL.teamA = lose;
+                    }
+                });
+
+                let maxWRound = Math.max(...winnersMatches.map(m => parseInt(m.key.split('_')[1].replace('R', ''))));
+                let finalWinnersMatch = currentMatches.find(m => m.key === `W_R${maxWRound}_M1`);
+                let grandFinal = currentMatches.find(m => m.key === 'GRAND_FINAL');
+                let repFinal = currentMatches.find(m => m.key === 'L_FINAL');
+
+                if (finalWinnersMatch && finalWinnersMatch.scoreA !== '' && finalWinnersMatch.scoreB !== '') {
+                    let sA = parseInt(finalWinnersMatch.scoreA); let sB = parseInt(finalWinnersMatch.scoreB);
+                    let win = sA > sB ? finalWinnersMatch.teamA : finalWinnersMatch.teamB;
+                    let lose = sA > sB ? finalWinnersMatch.teamB : finalWinnersMatch.teamA;
+
+                    if (grandFinal) grandFinal.teamA = win;
+                    if (repFinal) repFinal.teamB = lose;
+                }
+
+                if (repFinal && repFinal.scoreA !== '' && repFinal.scoreB !== '') {
+                    let sA = parseInt(repFinal.scoreA); let sB = parseInt(repFinal.scoreB);
+                    let win = sA > sB ? repFinal.teamA : repFinal.teamB;
+                    if (grandFinal) grandFinal.teamB = win;
+                }
+
+                let revanche = currentMatches.find(m => m.key === 'REVANCHE');
+                if (grandFinal && grandFinal.scoreA !== '' && grandFinal.scoreB !== '') {
+                    let sA = parseInt(grandFinal.scoreA); let sB = parseInt(grandFinal.scoreB);
+                    if (sB > sA && revanche) {
+                        revanche.teamA = grandFinal.teamA;
+                        revanche.teamB = grandFinal.teamB;
+                    }
+                }
+            }
+        }
+
+        function calculateModalityStandings(mod, segment) {
+            const currentMatches = matches.filter(m => m.modality === mod && m.segment === segment);
+            const filteredTeams = teams.filter(t => t.segment === segment);
+            
+            if(currentMatches.length === 0) {
+                renderModalityStandings([], false);
+                return;
+            }
+
+            const activeMatches = currentMatches.filter(m => m.teamA !== 'A Definir' && m.teamB !== 'A Definir');
+            const isCompleted = activeMatches.length > 0 && activeMatches.every(m => m.scoreA !== '' && m.scoreB !== '' && m.scoreA !== null && m.scoreB !== null);
+
+            let standings = [];
+
+            if (isCompleted) {
+                const format = currentMatches[0].format;
+
+                if (format === 'eliminatoria_simples') {
+                    let finalMatch = currentMatches.find(m => m.phase === 'Grande Final');
+                    let terceitoMatch = currentMatches.find(m => m.key === 'terceiro_lugar');
+
+                    let champ = null, vice = null, third = null, fourth = null;
+
+                    if (finalMatch) {
+                        let sA = parseInt(finalMatch.scoreA); let sB = parseInt(finalMatch.scoreB);
+                        champ = sA > sB ? finalMatch.teamA : finalMatch.teamB;
+                        vice = sA > sB ? finalMatch.teamB : finalMatch.teamA;
+                    }
+
+                    if (terceitoMatch && terceitoMatch.scoreA !== '' && terceitoMatch.scoreB !== '') {
+                        let sA = parseInt(terceitoMatch.scoreA); let sB = parseInt(terceitoMatch.scoreB);
+                        third = sA > sB ? terceitoMatch.teamA : terceitoMatch.teamB;
+                        fourth = sA > sB ? terceitoMatch.teamB : terceitoMatch.teamA;
+                    }
+
+                    let ordered = [champ, vice, third, fourth].filter(Boolean);
+                    filteredTeams.forEach(t => {
+                        if (!ordered.includes(t.name)) ordered.push(t.name);
+                    });
+
+                    standings = ordered.map(name => ({ name }));
+                }
+                else if (format === 'eliminatoria_dupla') {
+                    let revanche = currentMatches.find(m => m.key === 'REVANCHE');
+                    let grandFinal = currentMatches.find(m => m.key === 'GRAND_FINAL');
+                    let champ = null, vice = null;
+
+                    if (revanche && revanche.scoreA !== '' && revanche.scoreB !== '') {
+                        let sA = parseInt(revanche.scoreA); let sB = parseInt(revanche.scoreB);
+                        champ = sA > sB ? revanche.teamA : revanche.teamB;
+                        vice = sA > sB ? revanche.teamB : revanche.teamA;
+                    } else if (grandFinal) {
+                        let sA = parseInt(grandFinal.scoreA); let sB = parseInt(grandFinal.scoreB);
+                        champ = sA > sB ? grandFinal.teamA : grandFinal.teamB;
+                        vice = sA > sB ? grandFinal.teamB : grandFinal.teamA;
+                    }
+
+                    let ordered = [champ, vice].filter(Boolean);
+                    filteredTeams.forEach(t => {
+                        if (!ordered.includes(t.name)) ordered.push(t.name);
+                    });
+
+                    standings = ordered.map(name => ({ name }));
+                }
+                else {
+                    let stats = {};
+                    filteredTeams.forEach(t => { stats[t.name] = 0; });
+
+                    currentMatches.forEach(m => {
+                        let sA = parseInt(m.scoreA);
+                        let sB = parseInt(m.scoreB);
+                        if(stats[m.teamA] !== undefined && stats[m.teamB] !== undefined) {
+                            if(sA > sB) stats[m.teamA] += 3;
+                            else if(sB > sA) stats[m.teamB] += 3;
+                            else { stats[m.teamA] += 1; stats[m.teamB] += 1; }
+                        }
+                    });
+
+                    standings = Object.keys(stats).map(name => ({ name, points: stats[name] }))
+                                                 .sort((a,b) => b.points - a.points);
+                }
+            } else {
+                standings = filteredTeams.map(t => ({ name: t.name }));
+            }
+
+            renderModalityStandings(standings, isCompleted);
+        }
+
+        function renderModalityStandings(standings, isCompleted) {
+            const tbody = document.getElementById('modality-standings-body');
+            const statusContainer = document.getElementById('modality-status-container');
+            if(!tbody) return;
+
+            if(statusContainer) {
+                if(standings.length === 0) {
+                    statusContainer.innerHTML = '';
+                } else if(isCompleted) {
+                    statusContainer.innerHTML = `<span class="status-badge status-completed"><i class="fa-solid fa-circle-check"></i> MODALIDADE CONCLUÍDA (PONTUAÇÃO LIBERADA)</span>`;
+                } else {
+                    statusContainer.innerHTML = `<span class="status-badge status-ongoing"><i class="fa-solid fa-clock"></i> EM ANDAMENTO (PONTUAÇÃO RETIDA ATÉ A FINAL)</span>`;
+                }
+            }
+
+            tbody.innerHTML = standings.length ? '' : '<tr><td colspan="3" style="text-align:center;">Nenhuma partida processada.</td></tr>';
+            
+            standings.forEach((st, idx) => {
+                let pointsGeralReward = 0;
+                if(isCompleted) {
+                    if(idx === 0) pointsGeralReward = 50;       // 1º Lugar
+                    else if(idx === 1) pointsGeralReward = 40;  // 2º Lugar
+                    else if(idx === 2) pointsGeralReward = 30;  // 3º Lugar
+                    else if(idx === 3) pointsGeralReward = 20;  // 4º Lugar
+                    else pointsGeralReward = 10;                // Demais posições
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${idx+1}º</td>
+                        <td><strong>${st.name}</strong></td>
+                        <td>${isCompleted ? `<strong style="color:var(--primary);">${pointsGeralReward} pts</strong>` : '<span style="color:var(--text-muted); font-size:0.8rem;">Aguardando Final</span>'}</td>
+                    </tr>`;
+            });
+        }
+
+        function resetCurrentMatches() {
+            const mod = document.getElementById('mod-select').value;
+            const segment = document.getElementById('mod-segment-select').value;
+            if(confirm('Zerar jogos desta modalidade?')) {
+                matches = matches.filter(m => !(m.modality === mod && m.segment === segment));
+                saveAndRefresh();
+                renderMatches();
+            }
+        }
+
+        // SÚMULA, CARTÕES E ARTILHARIA
+        function populateMatchSelectorForSumula() {
+            const select = document.getElementById('sumula-match-select');
+            if(!select) return;
+            select.innerHTML = '';
+
+            const activeMatches = matches.filter(m => m.teamA !== 'A Definir' && m.teamB !== 'A Definir' && m.teamB !== 'BYE');
+            if(activeMatches.length === 0) {
+                select.innerHTML = '<option value="">Nenhum jogo disponível</option>';
+                document.getElementById('sumula-details-card').style.display = 'none';
+                return;
+            }
+
+            activeMatches.forEach(m => {
+                select.innerHTML += `<option value="${m.id}">${m.modality} (${m.segment}) - ${m.phase}: ${m.teamA} vs ${m.teamB}</option>`;
+            });
+
+            document.getElementById('sumula-details-card').style.display = 'block';
+        }
+
+        function loadSumulaMatch() {
+            const matchId = document.getElementById('sumula-match-select').value;
+            const card = document.getElementById('sumula-details-card');
+            if(!matchId) { if(card) card.style.display = 'none'; return; }
+
+            const match = matches.find(m => m.id == matchId);
+            if(!match) return;
+
+            card.style.display = 'block';
+            document.getElementById('sumula-match-title').innerHTML = `<i class="fa-solid fa-clipboard"></i> Súmula: ${match.teamA} x ${match.teamB}`;
+            document.getElementById('sumula-teamA-name').innerText = match.teamA;
+            document.getElementById('sumula-teamB-name').innerText = match.teamB;
+
+            if(!sumulas[matchId]) {
+                sumulas[matchId] = { teamA: [], teamB: [] };
+            }
+
+            renderSumulaPlayers('A');
+            renderSumulaPlayers('B');
+        }
+
+        function addPlayerToSumula(teamType) {
+            const matchId = document.getElementById('sumula-match-select').value;
+            if(!sumulas[matchId]) sumulas[matchId] = { teamA: [], teamB: [] };
+
+            const targetArray = teamType === 'A' ? sumulas[matchId].teamA : sumulas[matchId].teamB;
+            
+            // Atribui automaticamente o número seguinte ao último atleta cadastrado
+            let nextNum = 1;
+            if(targetArray.length > 0) {
+                let lastNum = parseInt(targetArray[targetArray.length - 1].number);
+                if(!isNaN(lastNum)) nextNum = lastNum + 1;
+            }
+
+            targetArray.push({ id: Date.now() + Math.random(), number: nextNum, name: '', goals: 0, card: 'Nenhum' });
+            renderSumulaPlayers(teamType);
+        }
+
+        // Função de importação em lote ou individual via caixa de texto
+        function importBatchPlayers(teamType) {
+            const matchId = document.getElementById('sumula-match-select').value;
+            if(!matchId) return;
+
+            const inputField = document.getElementById(`batch-players-${teamType}`);
+            const textVal = inputField ? inputField.value.trim() : '';
+
+            if(!textVal) {
+                alert('Digite o nome de ao menos um atleta no campo.');
+                return;
+            }
+
+            if(!sumulas[matchId]) sumulas[matchId] = { teamA: [], teamB: [] };
+            const targetArray = teamType === 'A' ? sumulas[matchId].teamA : sumulas[matchId].teamB;
+
+            // Separa os nomes por vírgula ou por quebra de linha
+            let names = textVal.split(/[\n,]+/).map(n => n.trim()).filter(n => n.length > 0);
+
+            let nextNum = 1;
+            if(targetArray.length > 0) {
+                let lastNum = parseInt(targetArray[targetArray.length - 1].number);
+                if(!isNaN(lastNum)) nextNum = lastNum + 1;
+            }
+
+            names.forEach(nameStr => {
+                targetArray.push({
+                    id: Date.now() + Math.random(),
+                    number: nextNum++,
+                    name: nameStr,
+                    goals: 0,
+                    card: 'Nenhum'
+                });
+            });
+
+            inputField.value = '';
+            renderSumulaPlayers(teamType);
+        }
+
+        function renderSumulaPlayers(teamType) {
+            const matchId = document.getElementById('sumula-match-select').value;
+            const tbody = document.getElementById(`sumula-team${teamType}-players`);
+            if(!tbody || !sumulas[matchId]) return;
+
+            const list = teamType === 'A' ? sumulas[matchId].teamA : sumulas[matchId].teamB;
+            tbody.innerHTML = list.length ? '' : '<tr><td colspan="5" style="text-align:center;">Nenhum jogador escalado.</td></tr>';
+
+            list.forEach((p, idx) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><input type="number" class="score-input" style="width:45px;" value="${p.number}" onchange="updateSumulaPlayer('${teamType}', ${idx}, 'number', this.value)"></td>
+                        <td><input type="text" class="form-control" style="padding:4px 8px;" value="${p.name}" placeholder="Nome Atleta" onchange="updateSumulaPlayer('${teamType}', ${idx}, 'name', this.value)"></td>
+                        <td><input type="number" class="score-input" style="width:50px;" value="${p.goals}" onchange="updateSumulaPlayer('${teamType}', ${idx}, 'goals', this.value)"></td>
+                        <td>
+                            <select class="form-control" style="padding:4px 6px; font-size:0.8rem;" onchange="updateSumulaPlayer('${teamType}', ${idx}, 'card', this.value)">
+                                <option value="Nenhum" ${p.card === 'Nenhum' ? 'selected' : ''}>—</option>
+                                <option value="Amarelo" ${p.card === 'Amarelo' ? 'selected' : ''}>🟡 Amarelo</option>
+                                <option value="Vermelho" ${p.card === 'Vermelho' ? 'selected' : ''}>🔴 Vermelho</option>
+                            </select>
+                        </td>
+                        <td><button class="btn btn-danger" style="padding:4px 8px;" onclick="removeSumulaPlayer('${teamType}', ${idx})"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+            });
+        }
+
+        function updateSumulaPlayer(teamType, idx, field, val) {
+            const matchId = document.getElementById('sumula-match-select').value;
+            if(!sumulas[matchId]) return;
+            const list = teamType === 'A' ? sumulas[matchId].teamA : sumulas[matchId].teamB;
+
+            if(field === 'goals') val = parseInt(val) || 0;
+            list[idx][field] = val;
+
+            const match = matches.find(m => m.id == matchId);
+            if(match) {
+                let totalGoalsA = sumulas[matchId].teamA.reduce((sum, item) => sum + (parseInt(item.goals) || 0), 0);
+                let totalGoalsB = sumulas[matchId].teamB.reduce((sum, item) => sum + (parseInt(item.goals) || 0), 0);
+                match.scoreA = totalGoalsA;
+                match.scoreB = totalGoalsB;
+                processPhaseAdvancement(match.modality, match.segment);
+            }
+        }
+
+        function removeSumulaPlayer(teamType, idx) {
+            const matchId = document.getElementById('sumula-match-select').value;
+            if(!sumulas[matchId]) return;
+            const list = teamType === 'A' ? sumulas[matchId].teamA : sumulas[matchId].teamB;
+            list.splice(idx, 1);
+            renderSumulaPlayers(teamType);
+        }
+
+        function saveSumula() {
+            saveAndRefresh();
+            alert('Súmula e Placar da partida salvos com sucesso!');
+        }
+
+        function renderCartoes() {
+            const tbody = document.getElementById('cartoes-table-body');
+            if(!tbody) return;
+
+            let cardStats = {};
+
+            Object.keys(sumulas).forEach(matchId => {
+                const match = matches.find(m => m.id == matchId);
+                if(!match) return;
+
+                ['teamA', 'teamB'].forEach(teamType => {
+                    const teamName = teamType === 'teamA' ? match.teamA : match.teamB;
+                    sumulas[matchId][teamType].forEach(player => {
+                        if(player.name && player.name.trim() !== '' && player.card !== 'Nenhum') {
+                            const key = `${player.name.trim().toLowerCase()}_${teamName}`;
+                            if(!cardStats[key]) {
+                                cardStats[key] = {
+                                    name: player.name.trim(),
+                                    teamName: teamName,
+                                    segment: match.segment,
+                                    yellows: 0,
+                                    reds: 0
+                                };
+                            }
+                            if(player.card === 'Amarelo') cardStats[key].yellows += 1;
+                            if(player.card === 'Vermelho') cardStats[key].reds += 1;
+                        }
+                    });
+                });
+            });
+
+            const list = Object.values(cardStats);
+            tbody.innerHTML = list.length ? '' : '<tr><td colspan="6" style="text-align: center;">Nenhuma infração registrada nas súmulas.</td></tr>';
+
+            list.forEach(c => {
+                let isSuspended = c.yellows >= 2 || c.reds >= 1;
+                let statusBadge = isSuspended 
+                    ? `<span class="badge-suspended"><i class="fa-solid fa-ban"></i> SUSPENSO (1 JOGO)</span>`
+                    : `<span class="status-badge status-completed">EM REGRA</span>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${c.name}</strong></td>
+                        <td>${c.teamName}</td>
+                        <td>${c.segment}</td>
+                        <td><span class="badge-yellow">${c.yellows}</span></td>
+                        <td><span class="badge-red">${c.reds}</span></td>
+                        <td>${statusBadge}</td>
+                    </tr>`;
+            });
+        }
+
+        function renderArtilharia() {
+            const tbody = document.getElementById('artilharia-table-body');
+            if(!tbody) return;
+
+            let goalStats = {};
+
+            Object.keys(sumulas).forEach(matchId => {
+                const match = matches.find(m => m.id == matchId);
+                if(!match) return;
+
+                ['teamA', 'teamB'].forEach(teamType => {
+                    const teamName = teamType === 'teamA' ? match.teamA : match.teamB;
+                    sumulas[matchId][teamType].forEach(player => {
+                        if(player.name && player.name.trim() !== '' && player.goals > 0) {
+                            const key = `${player.name.trim().toLowerCase()}_${teamName}`;
+                            if(!goalStats[key]) {
+                                goalStats[key] = {
+                                    name: player.name.trim(),
+                                    number: player.number || '—',
+                                    teamName: teamName,
+                                    segment: match.segment,
+                                    goals: 0
+                                };
+                            }
+                            goalStats[key].goals += player.goals;
+                        }
+                    });
+                });
+            });
+
+            const list = Object.values(goalStats).sort((a,b) => b.goals - a.goals);
+            tbody.innerHTML = list.length ? '' : '<tr><td colspan="6" style="text-align: center;">Nenhum gol registrado nas súmulas.</td></tr>';
+
+            list.forEach((a, idx) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${idx+1}º</strong></td>
+                        <td><strong>${a.name}</strong></td>
+                        <td>${a.number}</td>
+                        <td>${a.teamName}</td>
+                        <td>${a.segment}</td>
+                        <td><strong style="color:var(--primary); font-size:1.1rem;">${a.goals} gol(s)</strong></td>
+                    </tr>`;
+            });
+        }
+
+        // ARRECADAÇÃO SOCIAL
+        function renderArrecadacao() {
+            const tbody = document.getElementById('arrecadacao-table-body');
+            if(!tbody) return;
+            tbody.innerHTML = teams.length ? '' : '<tr><td colspan="4">Nenhuma equipe cadastrada.</td></tr>';
+            teams.forEach(t => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${t.name}</strong></td>
+                        <td>${t.segment}</td>
+                        <td><input type="number" class="form-control" style="width:100px;" value="${t.ptsArrecadacao || 0}" onchange="updateTeamPts(${t.id}, 'ptsArrecadacao', this.value)"></td>
+                        <td style="text-align:right;" class="no-print"><span style="color:var(--primary); font-weight:bold;">Salvo automaticamente</span></td>
+                    </tr>`;
+            });
+        }
+
+        // PROVAS CULTURAIS
+        function renderCultural() {
+            const tbody = document.getElementById('cultural-table-body');
+            if(!tbody) return;
+            tbody.innerHTML = teams.length ? '' : '<tr><td colspan="4">Nenhuma equipe cadastrada.</td></tr>';
+            teams.forEach(t => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${t.name}</strong></td>
+                        <td>${t.segment}</td>
+                        <td><input type="number" class="form-control" style="width:100px;" value="${t.ptsCultural || 0}" onchange="updateTeamPts(${t.id}, 'ptsCultural', this.value)"></td>
+                        <td style="text-align:right;" class="no-print"><span style="color:var(--primary); font-weight:bold;">Salvo automaticamente</span></td>
+                    </tr>`;
+            });
+        }
+
+        function updateTeamPts(id, field, val) {
+            const t = teams.find(item => item.id == id);
+            if(t) {
+                t[field] = parseInt(val) || 0;
+                saveAndRefresh();
+            }
+        }
+
+        // CLASSIFICAÇÃO GERAL
+        function switchGeralView(view, btn) {
+            activeGeralView = view;
+            document.querySelectorAll('.sub-tab').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            renderGeral();
+        }
+
+        function calculateColetivoPointsForTeam(teamName, segment) {
+            let totalColetivoPoints = 0;
+            const modalityList = [...new Set(matches.filter(m => m.segment === segment).map(m => m.modality))];
+
+            modalityList.forEach(mod => {
+                const modMatches = matches.filter(m => m.modality === mod && m.segment === segment);
+                const activeMatches = modMatches.filter(m => m.teamA !== 'A Definir' && m.teamB !== 'A Definir');
+                const isModalityCompleted = activeMatches.length > 0 && activeMatches.every(m => m.scoreA !== '' && m.scoreB !== '' && m.scoreA !== null && m.scoreB !== null);
+
+                if (isModalityCompleted) {
+                    const format = modMatches[0].format;
+                    let standings = [];
+                    const segTeams = teams.filter(t => t.segment === segment);
+
+                    if (format === 'eliminatoria_simples') {
+                        let finalMatch = modMatches.find(m => m.phase === 'Grande Final');
+                        let terceitoMatch = modMatches.find(m => m.key === 'terceiro_lugar');
+
+                        let champ = null, vice = null, third = null, fourth = null;
+
+                        if (finalMatch) {
+                            let sA = parseInt(finalMatch.scoreA); let sB = parseInt(finalMatch.scoreB);
+                            champ = sA > sB ? finalMatch.teamA : finalMatch.teamB;
+                            vice = sA > sB ? finalMatch.teamB : finalMatch.teamA;
+                        }
+
+                        if (terceitoMatch && terceitoMatch.scoreA !== '' && terceitoMatch.scoreB !== '') {
+                            let sA = parseInt(terceitoMatch.scoreA); let sB = parseInt(terceitoMatch.scoreB);
+                            third = sA > sB ? terceitoMatch.teamA : terceitoMatch.teamB;
+                            fourth = sA > sB ? terceitoMatch.teamB : terceitoMatch.teamA;
+                        }
+
+                        let ordered = [champ, vice, third, fourth].filter(Boolean);
+                        segTeams.forEach(t => {
+                            if (!ordered.includes(t.name)) ordered.push(t.name);
+                        });
+
+                        standings = ordered.map(name => ({ name }));
+                    }
+                    else if (format === 'eliminatoria_dupla') {
+                        let revanche = modMatches.find(m => m.key === 'REVANCHE');
+                        let grandFinal = modMatches.find(m => m.key === 'GRAND_FINAL');
+                        let champ = null, vice = null;
+
+                        if (revanche && revanche.scoreA !== '' && revanche.scoreB !== '') {
+                            let sA = parseInt(revanche.scoreA); let sB = parseInt(revanche.scoreB);
+                            champ = sA > sB ? revanche.teamA : revanche.teamB;
+                            vice = sA > sB ? revanche.teamB : revanche.teamA;
+                        } else if (grandFinal) {
+                            let sA = parseInt(grandFinal.scoreA); let sB = parseInt(grandFinal.scoreB);
+                            champ = sA > sB ? grandFinal.teamA : grandFinal.teamB;
+                            vice = sA > sB ? grandFinal.teamB : grandFinal.teamA;
+                        }
+
+                        let ordered = [champ, vice].filter(Boolean);
+                        segTeams.forEach(t => {
+                            if (!ordered.includes(t.name)) ordered.push(t.name);
+                        });
+
+                        standings = ordered.map(name => ({ name }));
+                    }
+                    else {
+                        let stats = {};
+                        segTeams.forEach(t => { stats[t.name] = 0; });
+
+                        modMatches.forEach(m => {
+                            let sA = parseInt(m.scoreA); let sB = parseInt(m.scoreB);
+                            if (stats[m.teamA] !== undefined && stats[m.teamB] !== undefined) {
+                                if (sA > sB) stats[m.teamA] += 3;
+                                else if (sB > sA) stats[m.teamB] += 3;
+                                else { stats[m.teamA] += 1; stats[m.teamB] += 1; }
+                            }
+                        });
+
+                        standings = Object.keys(stats).map(name => ({ name, points: stats[name] }))
+                                                     .sort((a,b) => b.points - a.points);
+                    }
+
+                    const posIdx = standings.findIndex(st => st.name === teamName);
+                    if (posIdx !== -1) {
+                        if (posIdx === 0) totalColetivoPoints += 50;
+                        else if (posIdx === 1) totalColetivoPoints += 40;
+                        else if (posIdx === 2) totalColetivoPoints += 30;
+                        else if (posIdx === 3) totalColetivoPoints += 20;
+                        else totalColetivoPoints += 10;
+                    }
+                }
+            });
+
+            return totalColetivoPoints;
+        }
+
+        function renderGeral() {
+            const tbody = document.getElementById('geral-table-body');
+            const title = document.getElementById('geral-title');
+            if(!tbody) return;
+
+            let filteredTeams = activeGeralView === 'GERAL_CONSOLIDADO' ? [...teams] : teams.filter(t => t.segment === activeGeralView);
+
+            if(title) {
+                title.innerHTML = `<i class="fa-solid fa-trophy"></i> Classificação — ${activeGeralView === 'GERAL_CONSOLIDADO' ? 'Geral Consolidada' : activeGeralView}`;
+            }
+
+            let geralData = filteredTeams.map(t => {
+                let ptsColetivo = calculateColetivoPointsForTeam(t.name, t.segment);
+                let ptsArr = t.ptsArrecadacao || 0;
+                let ptsCult = t.ptsCultural || 0;
+                let total = ptsColetivo + ptsArr + ptsCult;
+
+                return { name: t.name, segment: t.segment, ptsColetivo, ptsArr, ptsCult, total };
+            });
+
+            geralData.sort((a,b) => b.total - a.total);
+
+            tbody.innerHTML = geralData.length ? '' : '<tr><td colspan="7">Nenhuma equipe encontrada para exibir.</td></tr>';
+            geralData.forEach((g, idx) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${idx+1}º</strong></td>
+                        <td><strong>${g.name}</strong></td>
+                        <td>${g.segment}</td>
+                        <td>${g.ptsColetivo}</td>
+                        <td>${g.ptsArr}</td>
+                        <td>${g.ptsCult}</td>
+                        <td><strong style="color:var(--primary); font-size:1.05rem;">${g.total} pts</strong></td>
+                    </tr>`;
+            });
+        }
+
+        // BOLETIM
+        function renderBoletim() {
+            const tbody = document.getElementById('boletim-table-body');
+            if(!tbody) return;
+
+            let geralData = teams.map(t => {
+                let ptsColetivo = calculateColetivoPointsForTeam(t.name, t.segment);
+                let ptsArr = t.ptsArrecadacao || 0;
+                let ptsCult = t.ptsCultural || 0;
+                let total = ptsColetivo + ptsArr + ptsCult;
+
+                return { name: t.name, segment: t.segment, ptsColetivo, ptsArr, ptsCult, total };
+            });
+
+            geralData.sort((a,b) => b.total - a.total);
+
+            tbody.innerHTML = geralData.length ? '' : '<tr><td colspan="7">Sem dados para o boletim.</td></tr>';
+            geralData.forEach((g, idx) => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${idx+1}º</td>
+                        <td><strong>${g.name}</strong></td>
+                        <td>${g.segment}</td>
+                        <td>${g.ptsColetivo}</td>
+                        <td>${g.ptsArr}</td>
+                        <td>${g.ptsCult}</td>
+                        <td><strong>${g.total}</strong></td>
+                    </tr>`;
+            });
         }
 
         function saveAndRefresh() {
             localStorage.setItem(`teams_data_${currentYear}`, JSON.stringify(teams));
             localStorage.setItem(`matches_data_${currentYear}`, JSON.stringify(matches));
-            localStorage.setItem(`ind_athletes_data_${currentYear}`, JSON.stringify(indAthletes));
-            localStorage.setItem(`ind_matches_data_${currentYear}`, JSON.stringify(indMatches));
+            localStorage.setItem(`sumulas_data_${currentYear}`, JSON.stringify(sumulas));
             localStorage.setItem('available_years', JSON.stringify(availableYears));
             renderTeams();
         }
